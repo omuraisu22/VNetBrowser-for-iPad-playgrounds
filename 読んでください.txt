@@ -1,0 +1,30 @@
+VNetBrowser（実験アプリ）
+
+Android エミュレータと同じ「仮想 LAN カード（virtio-net）」と「小さなルーター（UserNet）」を使って、
+ページを読み込んで表示するだけのブラウザです。Android の代わりに、Swift で書いた小さな
+「ドライバ」と「TCP/IP」が、カードを動かします。
+
+  ブラウザ（WKWebView）
+    ↓ vnets://…（自分用のアドレス）
+  VNetScheme → HTTPFetch（http を話す）→ TLSStream（https の暗号。SecureTransport）
+    ↓
+  GuestStack（自作の TCP/IP：DHCP・ARP・DNS・TCP）
+    ↓
+  VirtioNetDriver（自作のドライバ）
+    ↓ RAM の中のキュー と レジスタ
+  VirtioNet（仮想 LAN カード。エミュレータと同じもの）
+    ↓
+  UserNet（小さなルーター）→ Network.framework → インターネット
+
+作り方（Swift Playgrounds）
+1. 新しい「App」を作る
+2. 最初からある ContentView.swift と MyApp.swift を消す（または中身をこのフォルダのものに入れ替える）
+3. このフォルダの .swift ファイルを全部入れる
+   MyApp / BrowserView / VNetMachine / VNetCore / VNetDriver / GuestStack / HTTPClient / TLSClient / UserNet / UserNetApple
+4. 実行して、アドレスに https://example.com/ などを入れて「開く」
+
+メモ
+・https は TLS 1.2 まで（SecureTransport）。たいていのサイトは開けます
+・http（80 番）は、今の iPad の環境では途中で 400 にされます（エミュレータのときと同じ）
+・ページの中の画像や CSS も、HTML と CSS を書き換えて自作の通信で読みます。
+  JavaScript が自分で作るアドレスは読めない（止めています）ので、動かないページもあります
